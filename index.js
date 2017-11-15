@@ -1,7 +1,4 @@
 'use strict';
-const fs = require('fs');
-const Cleverbot = require('cleverbot-node');
-const cleverbot = new Cleverbot;
 const axios = require('axios');
 const Discord = require('discord.js');
 const schedule = require('node-schedule');
@@ -9,12 +6,13 @@ const schedule = require('node-schedule');
 const { fetchCurrentMenus } = require('./campina');
 
 const bot = new Discord.Client();
+const pkg = require('./package.json');
 const token = require('./token.json').token;
 
-console.log("Booting up...");
+console.log('Booting up...');
 
 bot.on('ready', () => {
-    console.log('I am ready! Discord.js ver ' + Discord.version);
+    console.log(`I am ready! Campina Bot v${pkg.version}, Discord.js v${Discord.version}`);
 });
 
 function createCurrentMenuOutput(menusObj) {
@@ -58,7 +56,9 @@ bot.on('message', async message => {
     }
 
     if (message.content.startsWith('!help')) {
-        message.reply('Campina Bot Commands: `!ping`, `!menu`');
+        message.channel.send(`Campina Bot v${pkg.version}\n`
+            + `Commands: \`!ping\`, \`!menu\`, \`!menus\`\n\n`
+            + `Repository: ${pkg.repository.url}`);
     }
 
     if (message.content.startsWith('!menus')) {
@@ -94,7 +94,7 @@ bot.on('message', async message => {
 });
 
 // Scheduling
-schedule.scheduleJob({hour: 09, minute: 00}, async () => {
+schedule.scheduleJob({hour: 9, minute: 0}, async () => {
     try {
         for (let guild of bot.guilds.values()) {
             console.log(`Sending daily message to ${guild}`)

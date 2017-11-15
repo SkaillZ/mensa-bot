@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "axios": "^0.17.1",
-    "cleverbot-node": "*",
     "discord.js": "*",
     "node-schedule": "^1.2.5",
     "pdf2json": "^1.1.7"
