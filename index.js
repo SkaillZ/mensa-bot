@@ -23,6 +23,7 @@ function getDisplayedWeekday() {
 }
 
 function createCurrentMenuOutput(menusObj) {
+    let showTomorrowsMenu = new Date().getHours() > 14;    
     let menu = menusObj.getMenuForWeekday(getDisplayedWeekday());
     if (menu) {
         return `🍽 ${showTomorrowsMenu ? 'Tomorrow' : 'Today'}'s menu 🍔\n${menu.toString()}`;
