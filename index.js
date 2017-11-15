@@ -15,11 +15,15 @@ bot.on('ready', () => {
     console.log(`I am ready! Campina Bot v${pkg.version}, Discord.js v${Discord.version}`);
 });
 
-function createCurrentMenuOutput(menusObj) {
+function getDisplayedWeekday() {
     let date = new Date();
     let showTomorrowsMenu = date.getHours() > 14;
     let weekDayFromMonday = new Date().getDay() - 1; // Date.getDay() starts at sunday
-    let menu = menusObj.getMenuForWeekday(showTomorrowsMenu ? weekDayFromMonday + 1 : weekDayFromMonday);
+    return showTomorrowsMenu ? weekDayFromMonday + 1 : weekDayFromMonday;
+}
+
+function createCurrentMenuOutput(menusObj) {
+    let menu = menusObj.getMenuForWeekday(getDisplayedWeekday());
     if (menu) {
         return `🍽 ${showTomorrowsMenu ? 'Tomorrow' : 'Today'}'s menu 🍔\n${menu.toString()}`;
     }
@@ -35,6 +39,10 @@ async function getDefaultChannel(guild) {
     if (guild.channels.has(guild.id))
         return guild.channels.get(guild.id)
 
+    // Check for a "mensa" channel
+    if (guild.channels.exists("name", "mensa"))
+        return guild.channels.find("name", "mensa");
+
     // Check for a "general" channel, which is often default chat
     if (guild.channels.exists("name", "general"))
         return guild.channels.find("name", "general");
@@ -47,6 +55,11 @@ async function getDefaultChannel(guild) {
         .sort((a, b) => a.position - b.position ||
             Long.fromString(a.id).sub(Long.fromString(b.id)).toNumber())
         .first();
+}
+
+async function displayMainDishes(menusObj) {
+    let mainDishes = menusObj.getMenuForWeekday(getDisplayedWeekday()).getMainDishes();
+    return bot.user.setGame(mainDishes.join(', '));
 }
 
 bot.on('message', async message => {
@@ -93,22 +106,30 @@ bot.on('message', async message => {
     }
 });
 
-// Scheduling
-schedule.scheduleJob({hour: 9, minute: 0}, async () => {
-    try {
-        for (let guild of bot.guilds.values()) {
-            console.log(`Sending daily message to ${guild}`)
-            let channel = await getDefaultChannel(guild);
-            if (!channel)
-                continue;
-            
+bot.on('ready', async () => {
+    // Update main dishes at startup
+    let result = await fetchCurrentMenus();
+    displayMainDishes(result);
+
+    // Scheduling
+    schedule.scheduleJob({hour: 9, minute: 0}, async () => {
+        try {
             let result = await fetchCurrentMenus();
-            channel.send(createCurrentMenuOutput(result));
+            displayMainDishes(result);
+
+            for (let guild of bot.guilds.values()) {
+                console.log(`Sending daily message to ${guild}`)
+                let channel = await getDefaultChannel(guild);
+                if (!channel)
+                    continue;
+                
+                channel.send(createCurrentMenuOutput(result));
+            }
         }
-    }
-    catch (err) {
-        console.error(`Error while sending daily message: ${err}`);
-    }
+        catch (err) {
+            console.error(`Error while sending daily message: ${err}`);
+        }
+    });
 });
 
 bot.login(token);

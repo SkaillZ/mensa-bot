@@ -58,7 +58,8 @@ async function fetchCurrentMenus() {
                                     }
                                 }
                                 return msg;
-                            }
+                            },
+                            getMainDishes: () => menus.map(menu => menu.length >= 2 ? menu[1] : null)
                         };
                         menuIndex = -1;
                         continue;
