@@ -1,2 +1,2 @@
 # campina-bot
-Discord bot that parses menu information from http://campina.at and displays it daily
+Discord bot that parses menu information from http://loungerie.at and displays it daily

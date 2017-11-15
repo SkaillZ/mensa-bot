@@ -1,7 +1,7 @@
 {
   "name": "campina-bot",
   "version": "0.0.1",
-  "description": "Discord bot that parses menu information from http://campina.at and displays it daily",
+  "description": "Discord bot that parses menu information from http://loungerie.at and displays it daily",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,6 +17,10 @@
     "bot",
     "discord"
   ],
+  "repository": {
+    "type": "Git",
+    "url": "https://github.com/SkaillZ/campina-bot.git"
+  },
   "author": "SkaillZ",
   "license": "MIT"
 }
