@@ -2,6 +2,8 @@
 const axios = require('axios');
 const PDFParser = require('pdf2json');
 
+const { Menu, WeeklyMenu, DailyMenu, GERMAN_WEEKDAYS } = require('../models');
+
 async function fetchCurrentMenus() {
     return new Promise(async (resolve, reject) => {
         let response = await axios.get('http://www.loungerie.at/campina/');
@@ -27,15 +29,14 @@ async function fetchCurrentMenus() {
         let pdfResponse = await axios.get(url, {responseType: 'arraybuffer'});
 
         const parser = new PDFParser();
-        parser.on("pdfParser_dataError", errData => reject(errData.parserError) );
+        parser.on('pdfParser_dataError', errData => reject(errData.parserError) );
 
-        parser.on("pdfParser_dataReady", pdfData => {
+        parser.on('pdfParser_dataReady', pdfData => {
             // http://www.reactiongifs.com/r/mgc.gif
             let texts = pdfData.formImage.Pages[0].Texts.map(text => text.R)
                 .reduce((flat, toFlatten) => flat.concat(toFlatten))
                 .map(t => decodeURIComponent(t.T));
 
-            const GERMAN_WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
             let dailyMenus = [];
 
             let currentIndex = -1;
@@ -44,23 +45,8 @@ async function fetchCurrentMenus() {
                 for (let [index, weekDay] of GERMAN_WEEKDAYS.entries()) {
                     if (text.toLowerCase().startsWith(weekDay.toLowerCase())) {
                         currentIndex = index;
-                        let menus = [[], []];
-                        dailyMenus[currentIndex] = {
-                            weekDayName: weekDay,
-                            menus,
-                            toString: function() {
-                                let msg = '';
-                                msg += `${weekDay}:\n`
-                                for (let [index, menu] of menus.entries()) {
-                                    msg += `  Menü ${index+1}\n`;
-                                    for (let item of menu) {
-                                        msg += `    - ${item}\n`;
-                                    }
-                                }
-                                return msg;
-                            },
-                            getMainDishes: () => menus.map(menu => menu.length >= 2 ? menu[1] : null)
-                        };
+                        let menus = [new Menu(), new Menu()];
+                        dailyMenus[currentIndex] = new DailyMenu(index, menus);
                         menuIndex = -1;
                         continue;
                     }
@@ -85,23 +71,21 @@ async function fetchCurrentMenus() {
                     continue;
 
                 if (dailyMenus.length - 1 >= currentIndex && dailyMenus[currentIndex]) {
-                    dailyMenus[currentIndex].menus[menuIndex].push(text);
+                    dailyMenus[currentIndex].menus[menuIndex].dishes.push(text);
                 }
                 else {
-                    dailyMenus[currentIndex].menus[menuIndex] = [text];
+                    dailyMenus[currentIndex].menus[menuIndex] = new Menu();
                 }
             }
 
-            resolve({
-                dailyMenus,
-                getMenuForWeekday: weekDay => weekDay >= 0 && weekDay < dailyMenus.length ? dailyMenus[weekDay] : null,
-                toString: () => dailyMenus.reduce((str, day) => str += day.toString(), '')
-            });
+            resolve(new WeeklyMenu(dailyMenus));
         });
         parser.parseBuffer(pdfResponse.data);
     });
 }
 
 module.exports = {
+    name: 'Campina',
+    updateDays: [0],
     fetchCurrentMenus
 }

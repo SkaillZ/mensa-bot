@@ -3,7 +3,9 @@ const axios = require('axios');
 const Discord = require('discord.js');
 const schedule = require('node-schedule');
 
-const { fetchCurrentMenus } = require('./campina');
+const CampinaProvider = require('./providers/campina');
+const LamplmayrProvider = require('./providers/lamplmayr');
+const providers = [CampinaProvider, LamplmayrProvider];
 
 const bot = new Discord.Client();
 const pkg = require('./package.json');
@@ -12,8 +14,12 @@ const token = require('./token.json').token;
 console.log('Booting up...');
 
 bot.on('ready', () => {
-    console.log(`I am ready! Campina Bot v${pkg.version}, Discord.js v${Discord.version}`);
+    console.log(`I am ready! Campina Bot v${pkg.version}, Discord.js version: ${Discord.version}`);
 });
+
+function getResultsFromAllProviders() {
+    return Promise.all(providers.map(async pr => await pr.fetchCurrentMenus()));
+}
 
 function getDisplayedWeekday() {
     let date = new Date();
@@ -22,16 +28,32 @@ function getDisplayedWeekday() {
     return showTomorrowsMenu ? weekDayFromMonday + 1 : weekDayFromMonday;
 }
 
-function createCurrentMenuOutput(menusObj) {
-    let showTomorrowsMenu = new Date().getHours() > 14;    
-    let menu = menusObj.getMenuForWeekday(getDisplayedWeekday());
-    if (menu) {
-        return `🍽 ${showTomorrowsMenu ? 'Tomorrow' : 'Today'}'s menu 🍔\n${menu.toString()}`;
+function createCurrentMenuOutput(menus) {
+    let showTomorrowsMenu = new Date().getHours() > 14;
+    let weekDay = getDisplayedWeekday();
+    let output = `🍽 ${showTomorrowsMenu ? 'Morgige' : 'Heutige'}s Menü 🍔\n`;
+    let anyMenu = false;
+
+    for (let [index, weeklyMenu] of menus.entries()) {
+        let menu = weeklyMenu.getMenuForWeekday(weekDay);
+        let provider = providers[index];
+        if (menu) {
+            anyMenu = true;
+            output += `\n**${provider.name}**\n`;
+            output += `${menu.toString()}\n`;
+            if (provider.updateDays.includes(weekDay)) {
+                // TODO: introduce a way to detect this automatically
+                output += `\n⚠ Es könnten Informationen von '${provider.name}' aus der letzten Woche angezeigt werden.\n`;
+            }
+        }
     }
-    else {
-        throw new Error(`I couldn't find a menu for ${showTomorrowsMenu ? 'tomorrow' : 'today'}. `
-            + `Try '!menus' to see info for the entire week.`);
+
+    if (!anyMenu) {
+        throw new Error(`Ich kann kein Menü für ${showTomorrowsMenu ? 'morgen' : 'heute'} finden. `
+            + `Gib '!menus' ein, um Informationen für die gesamte Woche anzuzeigen.\n`);
     }
+
+    return output;
 }
 
 // https://github.com/AnIdiotsGuide/discordjs-bot-guide/blob/master/frequently-asked-questions.md#default-channel
@@ -79,11 +101,22 @@ bot.on('message', async message => {
         message.channel.startTyping();
 
         try {
-            let result = await fetchCurrentMenus();
-            message.reply(`🍽 This week's menus 🍔\n${result.toString()}`);
+            let results = await getResultsFromAllProviders();
+
+            let output = `🍽 Menüs dieser Woche: 🍔\n`;
+            for (let [index, weeklyMenu] of results.entries()) {
+                let provider = providers[index];
+                output += `\n**${provider.name}**\n`;
+                output += `${weeklyMenu.toString()}\n`;
+                if (provider.updateDays.includes(getDisplayedWeekday())) {
+                    // TODO: introduce a way to detect this automatically
+                    output += `\n⚠ Es könnten Informationen von '${provider.name}' aus der letzten Woche angezeigt werden.\n`;
+                }
+            }
+            message.reply(output);
         }
         catch (err) {
-            message.reply(`${err}`);
+            message.reply(err);
         }
         finally {
             message.channel.stopTyping();
@@ -95,8 +128,8 @@ bot.on('message', async message => {
         message.channel.startTyping();
 
         try {
-            let result = await fetchCurrentMenus();
-            message.reply(createCurrentMenuOutput(result));
+            let results = await getResultsFromAllProviders();
+            message.reply(createCurrentMenuOutput(results));
         }
         catch (err) {
             message.reply(`${!!err.message ? err.message : err}`);
@@ -109,14 +142,14 @@ bot.on('message', async message => {
 
 bot.on('ready', async () => {
     // Update main dishes at startup
-    let result = await fetchCurrentMenus();
-    displayMainDishes(result);
+    let results = await getResultsFromAllProviders();
+    displayMainDishes(results[0]);
 
     // Scheduling
     schedule.scheduleJob({hour: 9, minute: 0}, async () => {
         try {
-            let result = await fetchCurrentMenus();
-            displayMainDishes(result);
+            let results = await getResultsFromAllProviders();
+            displayMainDishes(results[0]);
 
             for (let guild of bot.guilds.values()) {
                 console.log(`Sending daily message to ${guild}`)
@@ -124,7 +157,7 @@ bot.on('ready', async () => {
                 if (!channel)
                     continue;
                 
-                channel.send(createCurrentMenuOutput(result));
+                channel.send(`@everyone ${createCurrentMenuOutput(results)}`);
             }
         }
         catch (err) {
