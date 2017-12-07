@@ -28,6 +28,9 @@ class DailyMenu {
     }
 
     toString() {
+        if (!Array.isArray(this.menus))
+            return this.menus.toString();
+
         let msg = '';
         for (let [index, menu] of this.menus.entries()) {
             msg +=`  Menü ${index+1}:\n${menu.toString()}`;
@@ -42,7 +45,7 @@ class WeeklyMenu {
     }
 
     getMenuForWeekday(weekDay) {
-        return weekDay >= 0 && weekDay < this.dailyMenus.length ? this.dailyMenus[weekDay] : null;
+        return this.dailyMenus.find(menu => menu.day === weekDay) || null;
     }
 
     toString() {

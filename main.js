@@ -4,8 +4,15 @@ const Discord = require('discord.js');
 const schedule = require('node-schedule');
 
 const CampinaProvider = require('./providers/campina');
-const LamplmayrProvider = require('./providers/lamplmayr');
-const providers = [CampinaProvider, LamplmayrProvider];
+const MittagAtProvider = require('./providers/mittagat');
+const providers = [
+    CampinaProvider,
+    MittagAtProvider.forPage('nsquare', 'nSquare [n²]'),
+    MittagAtProvider.forPage('gasthaus-lamplmair', 'Gasthaus Lamplmayr'),
+    MittagAtProvider.forPage('hofwirt-heinz', 'Hofwirt by Heinz'),
+];
+
+const { getDisplayedWeekday } = require('./util');
 
 const bot = new Discord.Client();
 const pkg = require('./package.json');
@@ -13,23 +20,13 @@ const token = require('./token.json').token;
 
 console.log('Booting up...');
 
-bot.on('ready', () => {
-    console.log(`I am ready! Campina Bot v${pkg.version}, Discord.js version: ${Discord.version}`);
-});
-
 function getResultsFromAllProviders() {
     return Promise.all(providers.map(async pr => await pr.fetchCurrentMenus()));
 }
 
-function getDisplayedWeekday() {
-    let date = new Date();
-    let showTomorrowsMenu = date.getHours() > 14;
-    let weekDayFromMonday = new Date().getDay() - 1; // Date.getDay() starts at sunday
-    return showTomorrowsMenu ? weekDayFromMonday + 1 : weekDayFromMonday;
-}
-
 function createCurrentMenuOutput(menus) {
-    let showTomorrowsMenu = new Date().getHours() > 14;
+    // let showTomorrowsMenu = new Date().getHours() > 14;
+    let showTomorrowsMenu = false;
     let weekDay = getDisplayedWeekday();
     let output = `🍽 ${showTomorrowsMenu ? 'Morgige' : 'Heutige'}s Menü 🍔\n`;
     let anyMenu = false;
@@ -141,6 +138,11 @@ bot.on('message', async message => {
 });
 
 bot.on('ready', async () => {
+    console.log(`I am ready! Mensa Bot v${pkg.version}, Discord.js version: ${Discord.version}`);    
+
+    // Initialization
+    bot.user.setUsername('Mensa Bot');
+
     // Update main dishes at startup
     let results = await getResultsFromAllProviders();
     displayMainDishes(results[0]);
