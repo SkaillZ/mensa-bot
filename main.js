@@ -159,7 +159,7 @@ bot.on('ready', async () => {
                 if (!channel)
                     continue;
                 
-                channel.send(`@everyone ${createCurrentMenuOutput(results)}`);
+                channel.send(createCurrentMenuOutput(results));
             }
         }
         catch (err) {
