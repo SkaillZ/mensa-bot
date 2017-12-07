@@ -9,6 +9,7 @@ const providers = [
     CampinaProvider,
     MittagAtProvider.forPage('nsquare', 'nSquare [n²]'),
     MittagAtProvider.forPage('gasthaus-lamplmair', 'Gasthaus Lamplmayr'),
+    MittagAtProvider.forPage('springinkerl', 'Springinkerl'),
     MittagAtProvider.forPage('hofwirt-heinz', 'Hofwirt by Heinz'),
 ];
 
