@@ -6,6 +6,9 @@ class Menu {
     }
 
     getMainDish() {
+        if (!Array.isArray(this.dishes))
+            return this.dishes;
+
         if (this.dishes.length === 0)
             return null;
 
@@ -24,7 +27,12 @@ class DailyMenu {
     }
 
     getMainDishes() {
-        return this.menus.map(menu => menu.getMainDish());
+        if (!Array.isArray(this.menus)) {
+            return this.menus.split('\n')
+                .map(menu => menu.trim());
+        }
+        
+        return this.menus.map(menu => menu.getMainDish() || menu);
     }
 
     toString() {

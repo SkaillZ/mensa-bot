@@ -10,7 +10,15 @@ const baseUrl = 'http://mittag.at/r/';
 async function fetchCurrentMenusFor(relativeUrl) {
     let response = await axios.get(baseUrl + relativeUrl);
     let $ = cheerio.load(response.data);
-    let text = $('#current-menu .current-menu')[0].children
+
+    let currentMenuElem = $('#current-menu .current-menu');
+    if (!currentMenuElem || currentMenuElem.length <= 0 || !currentMenuElem.html()) {
+        return new WeeklyMenu([
+            new DailyMenu(getDisplayedWeekday(), '⚠ Kein Menü gefunden für heute.')
+        ]);
+    }
+
+    let text = currentMenuElem[0].children
         .filter(elem => elem.name !== 'br' && elem.data.trim() !== '')
         .map(elem => '  ' + elem.data.trim())
         .join('\n');

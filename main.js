@@ -3,14 +3,18 @@ const axios = require('axios');
 const Discord = require('discord.js');
 const schedule = require('node-schedule');
 
-const CampinaProvider = require('./providers/campina');
+//const CampinaProvider = require('./providers/campina');
 const MittagAtProvider = require('./providers/mittagat');
+const LoungerieProvider = require('./providers/loungerie');
+
 const providers = [
-    CampinaProvider,
+    //CampinaProvider,
+    MittagAtProvider.forPage('campina', 'Campina'),
     MittagAtProvider.forPage('nsquare', 'nSquare [n²]'),
     MittagAtProvider.forPage('gasthaus-lamplmair', 'Gasthaus Lamplmayr'),
     MittagAtProvider.forPage('springinkerl', 'Springinkerl'),
     MittagAtProvider.forPage('hofwirt-heinz', 'Hofwirt by Heinz'),
+    LoungerieProvider
 ];
 
 const { getDisplayedWeekday } = require('./util');
@@ -80,6 +84,9 @@ async function getDefaultChannel(guild) {
 
 async function displayMainDishes(menusObj) {
     let mainDishes = menusObj.getMenuForWeekday(getDisplayedWeekday()).getMainDishes();
+    mainDishes = mainDishes.filter(dish => !dish.startsWith('€')
+        && !dish.toLowerCase().includes('tagessuppe')
+        && !dish.toLowerCase().includes('dessert'));
     return bot.user.setGame(mainDishes.join(', '));
 }
 
@@ -145,14 +152,19 @@ bot.on('ready', async () => {
     bot.user.setUsername('Mensa Bot');
 
     // Update main dishes at startup
-    let results = await getResultsFromAllProviders();
-    displayMainDishes(results[0]);
+    try {
+        let results = await getResultsFromAllProviders();
+        await displayMainDishes(results[0]);
+    }
+    catch (err) {
+        console.error(`Error while updating main dishes: ${err}`);
+    }
 
     // Scheduling
     schedule.scheduleJob({hour: 9, minute: 0}, async () => {
         try {
             let results = await getResultsFromAllProviders();
-            displayMainDishes(results[0]);
+            await displayMainDishes(results[0]);
 
             for (let guild of bot.guilds.values()) {
                 console.log(`Sending daily message to ${guild}`)
