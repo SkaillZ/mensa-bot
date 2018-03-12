@@ -13,9 +13,7 @@ async function fetchCurrentMenusFor(relativeUrl) {
 
     let currentMenuElem = $('#current-menu .current-menu');
     if (!currentMenuElem || currentMenuElem.length <= 0 || !currentMenuElem.html()) {
-        return new WeeklyMenu([
-            new DailyMenu(getDisplayedWeekday(), '⚠ Kein Menü gefunden für heute.')
-        ]);
+        return new WeeklyMenu([]);
     }
 
     let text = currentMenuElem[0].children

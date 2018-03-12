@@ -98,7 +98,7 @@ bot.on('message', async message => {
 
     if (message.content.startsWith('!help')) {
         message.channel.send(`Campina Bot v${pkg.version}\n`
-            + `Commands: \`!ping\`, \`!menu\`, \`!menus\`\n\n`
+            + `Commands: \`!ping\`, \`!hunger\`\n\n`
             + `Repository: ${pkg.repository.url}`);
     }
 
@@ -129,7 +129,7 @@ bot.on('message', async message => {
         return; // Avoid falling down to !menu
     }
 
-    if (message.content.startsWith('!menu')) {
+    if (message.content.startsWith('!menu') || message.content.startsWith('!hunger')) {
         message.channel.startTyping();
 
         try {
