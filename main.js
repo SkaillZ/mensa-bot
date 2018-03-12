@@ -1,6 +1,7 @@
 'use strict';
 const axios = require('axios');
 const Discord = require('discord.js');
+const GoogleImages = require('google-images');
 const schedule = require('node-schedule');
 
 //const CampinaProvider = require('./providers/campina');
@@ -22,6 +23,9 @@ const { getDisplayedWeekday } = require('./util');
 const bot = new Discord.Client();
 const pkg = require('./package.json');
 const token = require('./token.json').token;
+const googleKey = require('./token.json').googleApiKey;
+const searchEngine = '017545352424049632410:_thrj83ykvi';
+const imagesClient = new GoogleImages(searchEngine, googleKey);
 
 console.log('Booting up...');
 
@@ -87,7 +91,22 @@ async function displayMainDishes(menusObj) {
     mainDishes = mainDishes.filter(dish => !dish.startsWith('€')
         && !dish.toLowerCase().includes('tagessuppe')
         && !dish.toLowerCase().includes('dessert'));
-    return bot.user.setGame(mainDishes.join(', '));
+    await bot.user.setGame(mainDishes.join(', '));
+
+    if (mainDishes && mainDishes.length > 0) {
+        try {
+            let images = await imagesClient.search(mainDishes[0]);
+            if (images && images.length > 0)
+                await bot.user.setAvatar(images[0].url);
+            else {
+                console.warn('No search result.');
+                await bot.user.setAvatar(null);
+            }
+        }
+        catch (e) {
+            console.warn('Couldn\'t set profile image ', e);
+        }
+    }
 }
 
 bot.on('message', async message => {
