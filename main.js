@@ -165,6 +165,17 @@ bot.on('message', async message => {
     }
 });
 
+async function sendDailyMessage(results) {
+    for (let guild of bot.guilds.values()) {
+        console.log(`Sending daily message to ${guild}`)
+        let channel = await getDefaultChannel(guild);
+        if (!channel)
+            continue;
+        
+        await channel.send(createCurrentMenuOutput(results));
+    }
+}
+
 bot.on('ready', async () => {
     console.log(`I am ready! Mensa Bot v${pkg.version}, Discord.js version: ${Discord.version}`);    
 
@@ -174,6 +185,7 @@ bot.on('ready', async () => {
     // Update main dishes at startup
     try {
         let results = await getResultsFromAllProviders();
+        await sendDailyMessage(results);
         await displayMainDishes(results[0]);
     }
     catch (err) {
@@ -184,16 +196,8 @@ bot.on('ready', async () => {
     schedule.scheduleJob({hour: 9, minute: 0}, async () => {
         try {
             let results = await getResultsFromAllProviders();
+            await sendDailyMessage(results);
             await displayMainDishes(results[0]);
-
-            for (let guild of bot.guilds.values()) {
-                console.log(`Sending daily message to ${guild}`)
-                let channel = await getDefaultChannel(guild);
-                if (!channel)
-                    continue;
-                
-                channel.send(createCurrentMenuOutput(results));
-            }
         }
         catch (err) {
             console.error(`Error while sending daily message: ${err}`);
