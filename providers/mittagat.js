@@ -17,9 +17,11 @@ async function fetchCurrentMenusFor(relativeUrl) {
     }
 
     let text = currentMenuElem[0].children
-        .filter(elem => elem.name !== 'br' && elem.data.trim() !== '')
-        .map(elem => '  ' + elem.data.trim())
+        .filter(elem => elem.type == 'text')
+        .map(elem => '  ' + elem.data)
         .join('\n');
+
+    console.log(text);
 
     return new WeeklyMenu([
         new DailyMenu(getDisplayedWeekday(), text)
