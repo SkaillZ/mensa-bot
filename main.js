@@ -3,6 +3,7 @@ const axios = require('axios');
 const Discord = require('discord.js');
 const GoogleImages = require('google-images');
 const schedule = require('node-schedule');
+const querystring = require('querystring');
 
 //const CampinaProvider = require('./providers/campina');
 const MittagAtProvider = require('./providers/mittagat');
@@ -25,13 +26,26 @@ const bot = new Discord.Client();
 const pkg = require('./package.json');
 const token = require('./token.json').token;
 const googleKey = require('./token.json').googleApiKey;
+const { mittagAtId, mittagAtSecret }  = require('./token.json');
 const searchEngine = '017545352424049632410:_thrj83ykvi';
 const imagesClient = new GoogleImages(searchEngine, googleKey);
 
 console.log('Booting up...');
 
-function getResultsFromAllProviders() {
-    return Promise.all(providers.map(async pr => await pr.fetchCurrentMenus()));
+async function getResultsFromAllProviders() {
+    console.log(mittagAtId + " " + mittagAtSecret);
+    try {
+        let result = await axios.post('https://www.mittag.at/oauth/token', querystring.stringify({
+            grant_type: 'client_credentials',
+            client_id: mittagAtId,
+            client_secret: mittagAtSecret,
+            scope: 'public'
+        }), {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        });
+        console.log(result.data.access_token);
+        return Promise.all(providers.map(async pr => await pr.fetchCurrentMenus(result.data.access_token)));
+    } catch(err) { console.log(err); }
 }
 
 function createCurrentMenuOutput(menus) {
@@ -96,6 +110,7 @@ async function displayMainDishes(menusObj) {
 
     if (mainDishes && mainDishes.length > 0) {
         try {
+            console.log(mainDishes[0]);
             let images = await imagesClient.search(mainDishes[0]);
             if (images && images.length > 0)
                 await bot.user.setAvatar(images[0].url);

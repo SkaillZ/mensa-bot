@@ -5,26 +5,19 @@ const cheerio = require('cheerio');
 const { getDisplayedWeekday } = require('../util');
 const { Menu, WeeklyMenu, DailyMenu, GERMAN_WEEKDAYS } = require('../models');
 
-const baseUrl = 'http://mittag.at/r/';
+const baseUrl = 'https://www.mittag.at/api/2/restaurant/';
 
-async function fetchCurrentMenusFor(relativeUrl) {
-    let response = await axios.get(baseUrl + relativeUrl);
-    let $ = cheerio.load(response.data);
+async function fetchCurrentMenusFor(relativeUrl, token) {
+    console.log(`${baseUrl}?id=${relativeUrl}`);
+    let response = await axios.get(baseUrl + relativeUrl, {
+        headers: {'Authorization': `Bearer ${token}`}
+    });
 
-    let currentMenuElem = $('#current-menu .current-menu');
-    if (!currentMenuElem || currentMenuElem.length <= 0 || !currentMenuElem.html()) {
-        return new WeeklyMenu([]);
-    }
-
-    let text = currentMenuElem[0].children
-        .filter(elem => elem.type == 'text')
-        .map(elem => '  ' + elem.data)
-        .join('\n');
-
-    console.log(text);
+    let menu = response.data.menu || '';
+    menu = menu.replace(/^\s*[\r\n]/gm, ''); // Get rid of empty lines
 
     return new WeeklyMenu([
-        new DailyMenu(getDisplayedWeekday(), text)
+        new DailyMenu(getDisplayedWeekday(), menu)
     ]);
 }
 
@@ -33,7 +26,7 @@ module.exports = {
         return {
             name: name || relativeUrl,
             updateDays: [],
-            fetchCurrentMenus: () => fetchCurrentMenusFor(relativeUrl)
+            fetchCurrentMenus: token => fetchCurrentMenusFor(relativeUrl, token)
         };
     }
 }

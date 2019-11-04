@@ -12,7 +12,8 @@
     "discord.js": "*",
     "google-images": "^2.1.0",
     "node-schedule": "^1.2.5",
-    "pdf2json": "^1.1.7"
+    "pdf2json": "^1.1.7",
+    "querystring": "^0.2.0"
   },
   "keywords": [
     "bot",
