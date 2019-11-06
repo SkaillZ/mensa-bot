@@ -15,7 +15,7 @@ const providers = [
     MittagAtProvider.forPage('nsquare', 'nSquare [n²]'),
     MittagAtProvider.forPage('gasthaus-lamplmair', 'Gasthaus Lamplmayr'),
     MittagAtProvider.forPage('springinkerl', 'Springinkerl'),
-    MittagAtProvider.forPage('hofwirt-heinz', 'Hofwirt by Heinz'),
+    MittagAtProvider.forPage('schlossrestaurant-hagenberg', 'Schlossrestaurant Hagenberg'),
     MittagAtProvider.forPage('burgerei-hagenberg', 'Burgerei Hagenberg'),
     LoungerieProvider
 ];
