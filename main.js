@@ -69,6 +69,10 @@ function createCurrentMenuOutput(menus) {
         }
     }
 
+    output += `\n**Wochenmenüs:**\n`;
+    output += `**Campina: https://www.mittag.at/w/campina **\n`;
+    output += `**nSquare: https://www.mittag.at/w/nsquare **\n`;
+
     if (!anyMenu) {
         throw new Error(`Ich kann kein Menü für ${showTomorrowsMenu ? 'morgen' : 'heute'} finden. `
             + `Gib '!menus' ein, um Informationen für die gesamte Woche anzuzeigen.\n`);
